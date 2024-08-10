@@ -9,9 +9,10 @@ class FirstTest {
         sac.someAnotherFunction();
     }
 
-    public static void main() {
+    public static void main(String[] args) {
         final var ft = new FirstTest();
         ft.someFunction();
+        System.out.println(ft.a);
     }
 }
 

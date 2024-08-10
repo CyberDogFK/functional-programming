@@ -3,7 +3,7 @@ package chapter1;
 import java.util.function.Function;
 
 public class FunctionComposition {
-    public static void main() {
+    public static void main(String[] args) {
         Function<Integer, Integer> negateThenAbs =
                 ((Function<Integer, Integer>)Math::negateExact)
                         .andThen(Math::abs);
