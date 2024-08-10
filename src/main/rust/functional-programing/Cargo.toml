@@ -1,0 +1,32 @@
+[package]
+name = "functional_programming_examples_from_java"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.38"
+
+[[bin]]
+path = "main.rs"
+name = "functional-programming"
+
+[[bin]]
+path = "bin/clousure.rs"
+name = "closure"
+
+[[bin]]
+path = "bin/elimiating_dependendicies.rs"
+name = "elimiating_dependendicies"
+
+[[bin]]
+path = "bin/high_order_functinos.rs"
+name = "high_order_functinos"
+
+[[bin]]
+path = "bin/memorization.rs"
+name = "memorization"
+
+[[bin]]
+path = "bin/timestamp.rs"
+name = "timestamp"
+
