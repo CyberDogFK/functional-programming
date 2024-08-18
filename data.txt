@@ -1,0 +1,15 @@
+Location
+House
+You are standing outside a house sitting in the middle of a meadow. There is a path leading north to the woods and a path leading east to a lake.
+Direction
+North
+Woods
+Direction
+East
+Emerald Blue Lake
+Item
+Axe
+A shape wooden handle axe
+Item
+Stone
+A small round rock
