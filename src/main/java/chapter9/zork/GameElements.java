@@ -13,7 +13,7 @@ public class GameElements {
 
     public static void displayView(Location location) {
         System.out.println(location.getDescription());
-        GameElements.currentLocation.getDescription();
+        GameElements.currentLocation.displayItems();
         GameElements.currentLocation.displayNPCs();
     }
 }

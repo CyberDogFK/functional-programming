@@ -3,8 +3,6 @@ package chapter9.zork;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Map;
-import java.util.HashMap;
 
 public class Character {
     private final List<String> items = new ArrayList<>();
