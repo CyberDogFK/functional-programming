@@ -5,6 +5,7 @@ import java.util.List;
 
 public class Command {
     public List<String> arguments = new ArrayList<String>();
+    public String command = "";
 
     public Command arguments(List<String> arguments) {
         this.arguments = arguments;
@@ -13,5 +14,27 @@ public class Command {
 
     public List<String> getArguments() {
         return this.arguments;
+    }
+
+    public void addArgument(String argument) {
+        arguments.add(argument);
+    }
+
+    public Command command(String command) {
+        this.command = command;
+        return this;
+    }
+
+    public String getCommand() {
+        return this.command;
+    }
+
+    public void setCommand(String command) {
+        this.command = command;
+    }
+
+    public void clear() {
+        arguments.clear();
+        command = "";
     }
 }

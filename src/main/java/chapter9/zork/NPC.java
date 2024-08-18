@@ -24,6 +24,6 @@ public class NPC {
 
     @Override
     public String toString() {
-        return "Name: " + name + ", Description: " + description + " Location: " + location;
+        return "Name: " + name + ", Description: " + description;
     }
 }

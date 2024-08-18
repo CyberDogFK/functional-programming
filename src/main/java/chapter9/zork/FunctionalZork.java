@@ -171,7 +171,7 @@ public class FunctionalZork {
         while (!"Quit".equalsIgnoreCase(command)) {
             System.out.print(">> ");
             commandStream = game.getCommandStream();
-            game.parceCommandStream(commandStream);
+            game.parseCommandStream(commandStream);
             command = game.executeCommand();
         }
     }
