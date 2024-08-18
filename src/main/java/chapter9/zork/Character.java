@@ -83,7 +83,8 @@ public class Character {
                             );
                             return "";
                         })
-                        .orElse("However, you can't go " + direction + "\n"));
+                        .orElse("However, you can't go " + direction + "\n")
+                );
             });
             return true;
         }

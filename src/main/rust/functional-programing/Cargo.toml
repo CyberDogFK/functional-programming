@@ -6,6 +6,10 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.38"
 
+[lib]
+path = "lib.rs"
+name = "functional-programing"
+
 [[bin]]
 path = "main.rs"
 name = "functional-programming"
