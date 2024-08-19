@@ -53,6 +53,20 @@ impl FunctionalZork {
     }
     
     pub fn new() -> Self {
+        let mut zork = FunctionalZork {
+            // scanner: Scanner
+            character: Character::from_location(GameElements.currentLocation),
+            fc: FunctionalCommands::new(),
+            commands: HashMap::new(),
+            command: Command::new(),
+        };
+        zork.initialize_commands();
+        zork
+    }
+    
+    fn initialize_commands(&mut self) {
+        let mut commands = &mut self.commands;
+        commands.insert("drop".to_string(), self.drop_command());
         
     }
 }

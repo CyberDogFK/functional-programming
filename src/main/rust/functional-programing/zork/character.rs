@@ -6,7 +6,7 @@ pub struct Character {
 }
 
 impl Character {
-    pub fn new_from_location(location: Location) -> Self {
+    pub fn from_location(location: Location) -> Self {
         Self {
             items: vec![],
             location,
@@ -56,6 +56,7 @@ impl Character {
                     println!("Cannot drop {}", item_name)
                 }
             }
+            dropped_item
         }
     }
     
