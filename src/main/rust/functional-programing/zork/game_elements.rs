@@ -52,7 +52,7 @@ impl Location {
     pub fn get_items(&self) -> &[String] {
         &self.items
     }
-    
+
     pub fn get_items_mut(&mut self) -> &mut Vec<String> {
         &mut self.items
     }
@@ -92,7 +92,7 @@ impl Location {
     pub fn add_direction(&mut self, direction: Direction) {
         self.directions.insert(direction.get_direction().into(), direction);
     }
-    
+
     pub fn add_direction_str(&mut self, direction: &str, location: &str) {
         let new_direction = Direction::new_from(direction.into(), location.into());
         self.directions.insert(
@@ -100,7 +100,7 @@ impl Location {
             new_direction
         );
     }
-    
+
     pub fn display_paths(&self) {
         self.directions.iter().for_each(|(way, direction)| {
             print!("if you go {}", way);
@@ -168,7 +168,7 @@ impl Direction {
             location: "".into(),
         }
     }
-    
+
     pub fn new_from(direction: String, location: String) -> Self {
         Self {
             direction,

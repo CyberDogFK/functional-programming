@@ -3,17 +3,17 @@ use crate::zork::character::Character;
 use crate::zork::functional_commands::FunctionalCommands;
 use crate::zork::game_elements::Command;
 
-pub struct FunctionalZork {
+pub struct FunctionalZork<'a> {
     // scanner: Scanner
     character: Character,
     fc: FunctionalCommands,
-    commands: HashMap<String, CommandSupplier>,
+    commands: HashMap<String, CommandSupplier<'a>>,
     command: Command,
 }
 
-type CommandSupplier = Box<dyn FnMut() -> bool>;
+type CommandSupplier<'a> = Box<dyn FnMut() -> bool + 'a>;
 
-impl FunctionalZork {
+impl FunctionalZork<'_> {
     fn drop_command(&mut self) -> CommandSupplier {
         Box::new(|| self.character.drop(&self.command))
     }
