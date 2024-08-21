@@ -17,6 +17,7 @@ impl GameElements {
     }
 }
 
+#[derive(Clone)]
 pub struct Location {
     name: String,
     description: String,
@@ -26,6 +27,16 @@ pub struct Location {
 }
 
 impl Location {
+    pub fn new() -> Self {
+        Location {
+            name: "".to_string(),
+            description: "".to_string(),
+            items: Vec::new(),
+            npcs: Vec::new(),
+            directions: HashMap::new(),
+        }
+    }
+    
     pub fn name(mut self, name: &str) -> Self {
         self.name = name.into();
         self
@@ -156,6 +167,7 @@ impl Command {
     }
 }
 
+#[derive(Clone)]
 pub struct Direction {
     direction: String,
     location: String,

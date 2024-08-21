@@ -35,7 +35,7 @@ impl Character {
             });
         true
     }
-    
+
     pub fn drop(&mut self, command: &Command) -> bool {
         let arguments = command.get_arguments();
         if arguments.is_empty() {
@@ -59,7 +59,7 @@ impl Character {
             dropped_item
         }
     }
-    
+
     pub fn walk(&mut self, command: &Command) -> bool{
         let directions = command.get_arguments();
         if directions.is_empty() {
@@ -67,7 +67,7 @@ impl Character {
             false
         } else {
             directions.iter().for_each(|direction| {
-                let location_name: Option<String> = 
+                let location_name: Option<String> =
                     GameElements::current_location.get_location(direction);
                 println!("{}", location_name
                     .map(|name| {
@@ -85,7 +85,7 @@ impl Character {
             true
         }
     }
-    
+
     pub fn inventory(&self, command: &Command) -> bool {
         let arguments = command.get_arguments();
         if self.items.is_empty() {
