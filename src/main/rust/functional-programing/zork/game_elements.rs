@@ -36,7 +36,7 @@ impl Location {
             directions: HashMap::new(),
         }
     }
-    
+
     pub fn name(mut self, name: &str) -> Self {
         self.name = name.into();
         self

@@ -1,11 +1,14 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Read};
+use std::path::Path;
 use std::pin::Pin;
 use std::rc::Rc;
 use std::sync::{LazyLock, Mutex, Once};
 use crate::zork::character::Character;
 use crate::zork::functional_commands::FunctionalCommands;
-use crate::zork::game_elements::{Command, Item, Location, NPC};
+use crate::zork::game_elements::{Command, Direction, Item, Location, NPC};
 
 static GAME_ELEMENTS: LazyLock<GameElements<'static>> = LazyLock::new(|| GameElements::new());
 
@@ -76,7 +79,7 @@ impl FunctionalZork<'_> {
         }))
     }
 
-    pub fn new() -> Self {
+    pub fn new() -> Rc<RefCell<Self>> {
         FunctionalZork {
             // scanner: Scanner
             character: Character::from_location(GAME_ELEMENTS.current_location.clone()),
@@ -86,14 +89,60 @@ impl FunctionalZork<'_> {
         }.initialize_commands()
     }
 
-    fn initialize_commands(mut self) -> Self {
+    fn initialize_commands(mut self) -> Rc<RefCell<Self>> {
         // let mut commands = &mut self.commands;
         let s = Rc::new(RefCell::new(self));
         let mut ss = s.borrow_mut();
-        ss.commands.insert("drop".to_string(), s.borrow().drop_command().clone());
-
-        self
+        // ss.commands.insert("drop".to_string(), s.borrow().drop_command().clone());
+        ss.commands.insert("drop".to_string(), ss.drop_command());
+        ss.commands.insert("Drop".to_string(), ss.drop_command());
+        ss.commands.insert("pickup".to_string(), ss.pickup_command());
+        ss.commands.insert("Pickup".to_string(), ss.pickup_command());
+        ss.commands.insert("walk".to_string(), ss.walk_command());
+        ss.commands.insert("go".to_string(), ss.walk_command());
+        ss.commands.insert("inventory".to_string(), ss.inventory_command());
+        ss.commands.insert("inv".to_string(), ss.inventory_command());
+        ss.commands.insert("look".to_string(), ss.look_command());
+        ss.commands.insert("directions".to_string(), ss.directions_command());
+        ss.commands.insert("dir".to_string(), ss.directions_command());
+        ss.commands.insert("quit".to_string(), ss.quit_command());
+        s
     }
+}
+
+fn initialize_game() {
+    println!("Welcome to Functional Zork!\n");
+    let file = File::open("data.txt")
+        .unwrap();
+    let mut br = BufReader::new(file);
+    let mut line = String::new();
+    let mut buf = String::new();
+    br.read_line(&mut line).unwrap();
+
+    while ("Direction".eq_ignore_ascii_case(&line)) {
+        let mut location = Location::new()
+            .name({ // todo: make a function from it
+                br.read_line(&mut buf).unwrap();
+                buf.as_ref()
+            })
+            .description({ // todo: think, maybe pass it by value???
+                br.read_line(&mut buf).unwrap();
+                buf.as_ref()
+            });
+        br.read_line(&mut line).unwrap();
+        while ("Direction".eq_ignore_ascii_case(&line)) {
+            // Add direction
+            location.add_direction(
+                Direction::new()
+                    .direction({
+                        br.read_line(&mut buf).unwrap();
+                        buf.as_ref()
+                    })
+            )
+            br.read_line(&mut line).unwrap();
+        }
+    }
+
 }
 
 pub struct GameElements<'a> {
@@ -114,7 +163,7 @@ impl GameElements<'_> {
             current_location: Location::new()
         }
     }
-    
+
     fn display_view(&self, location: &Location) {
         println!("{}", location.get_description());
         self.current_location.display_items();
