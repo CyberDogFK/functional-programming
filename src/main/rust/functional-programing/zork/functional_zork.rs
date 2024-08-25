@@ -105,7 +105,7 @@ impl <'a> FunctionalZork<'a> {
             fc: FunctionalCommands::new(),
             commands: HashMap::new(),
             command: Command::new(),
-        }.initialize_commands()
+        }.initialize_game()
     }
 
     pub fn initialize_commands(self) -> Arc<Mutex<Self>> {
@@ -129,14 +129,14 @@ impl <'a> FunctionalZork<'a> {
         s
     }
 
-    pub fn initialize_game(mut self) {
+    pub fn initialize_game(mut self) -> Arc<Mutex<Self>> {
         println!("Welcome to Functional Zork!\n");
         let file = File::open("data.txt")
             .unwrap();
         let mut buf = String::new();
         let mut br = BufferedReader::new(file, buf);
         let mut line = String::new();
-        br.read_line();
+        line = br.read_line();
 
         while "Location".eq_ignore_ascii_case(&line) {
             let mut location = Location::new()
@@ -183,7 +183,7 @@ impl <'a> FunctionalZork<'a> {
         } else {
             println!("Missing Starting Location!");
         }
-        self.initialize_commands();
+        self.initialize_commands()
     }
 
     pub fn get_command_iter(&self) -> Vec<String> {
@@ -243,7 +243,7 @@ impl <'a> FunctionalZork<'a> {
         //     }
         //     None => {
         //     }
-        // }; 
+        // };
     }
 }
 

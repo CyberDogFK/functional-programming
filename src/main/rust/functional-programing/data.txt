@@ -1,0 +1,50 @@
+Location
+House
+You are standing outside a house sitting in the middle of a meadow. There is a path leading north to the woods and a path leading east to a lake.
+Direction
+North
+Woods
+Direction
+East
+Emerald Blue Lake
+Item
+Axe
+A shape wooden handle axe
+Item
+Stone
+A small round rock
+Location
+Woods
+You are standing in the middle of a dense woods. There is a path leading south to a meadow and a path leading east to some small hills.
+Direction
+East
+Small Hills
+Direction
+South
+House
+Location
+Emerald Blue Lake
+You are standing near big blue lake. There is
+Direction
+North
+Small Hills
+Direction
+West
+House
+Item
+Orge
+Can be used for making bear and whisky
+Location
+Small Hills
+You are standing on the top of a small hill. To the west you see a path leading to a vast forest. To the south is a path leading to an emerald blue lake.
+Direction
+West
+Woods
+Direction
+South
+Emerald Blue Lake
+Item
+Key
+Key to some chest
+StartingLocation
+House
