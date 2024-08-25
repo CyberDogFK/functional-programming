@@ -41,7 +41,7 @@ pub struct FunctionalZork<'a> {
 
 pub type CommandSupplier<'a> = Arc<Mutex<dyn FnMut() -> bool + Sync + Send + 'a>>;
 
-impl FunctionalZork<'_> {
+impl <'a> FunctionalZork<'a> {
     fn drop_command(zork: Arc<Mutex<FunctionalZork>>) -> CommandSupplier {
         Arc::new(Mutex::new(move || {
             let mut zork = zork.lock().unwrap();
@@ -217,23 +217,33 @@ impl FunctionalZork<'_> {
             });
     }
 
-    pub fn execute_command(zork: Arc<Mutex<Self>>) -> String {
-        let mut binding = zork.clone();
-        let mut zork = binding.lock().unwrap();
-        let command = zork.command.get_command();
-        let x = match binding.lock().unwrap().commands.get(command).clone() {
-            Some(next_command) => {
-                zork.fc.add_command(next_command.clone());
-                zork.fc.execute_command();
-                zork.command.get_command().to_string()
-            }
-            None => {
-                println!("Unknown command");
-                "".to_string()
-            }
-        }; x
-
-
+    pub fn execute_command(zork: Arc<Mutex<FunctionalZork>>) -> String {
+        let binding = zork.clone();
+        // let mut zork = binding.lock().unwrap();
+        let binding = zork.clone();
+        let binding = binding.lock().unwrap();
+        let command = binding.command.get_command();
+        let binding = zork.clone();
+        let binding = binding.lock().unwrap();
+        let commands = binding.commands.get(command);
+        if commands.is_some() {
+            let c = commands.unwrap().clone();
+            let binding = zork.clone();
+            binding.lock().unwrap().fc.add_command(c);
+            let binding = zork.clone();
+            binding.lock().unwrap().fc.execute_command();
+            let binding = zork.clone();
+            let x = binding.lock().unwrap().command.get_command().to_string(); x
+        } else {
+            println!("Unknown command");
+            "".to_string()
+        }
+        // let x = match zork.commands.get(command) {
+        //     Some(next_command) => {
+        //     }
+        //     None => {
+        //     }
+        // }; 
     }
 }
 

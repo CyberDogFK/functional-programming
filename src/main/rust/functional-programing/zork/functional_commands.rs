@@ -12,14 +12,14 @@ impl <'a> FunctionalCommands<'a> {
         }
     }
 
-    pub fn add_command(&mut self, command: CommandSupplier) {
+    pub fn add_command(&mut self, command: CommandSupplier<'a>) {
         self.commands.push(command)
     }
 
     pub fn execute_command(&mut self) {
         self.commands.iter().for_each(|it| {
             let mut a = it.lock().unwrap();
-            a(); 
+            a();
         });
         self.commands.clear();
     }
