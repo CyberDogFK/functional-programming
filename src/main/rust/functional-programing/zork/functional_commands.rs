@@ -16,6 +16,16 @@ impl <'a> FunctionalCommands<'a> {
         self.commands.push(command)
     }
 
+    pub fn get_commands(&self) -> Vec<CommandSupplier<'a>> {
+        self.commands.iter()
+            .map(|c| c.clone())
+            .collect()
+    }
+    
+    pub fn clear_commands(&mut self) {
+        self.commands.clear()
+    }
+    
     pub fn execute_command(&mut self) {
         self.commands.iter().for_each(|it| {
             let mut a = it.lock().unwrap();

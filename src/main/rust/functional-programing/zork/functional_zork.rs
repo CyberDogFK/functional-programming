@@ -2,7 +2,7 @@ use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Seek};
 use std::rc::Rc;
 use std::sync::{Arc, LazyLock, Mutex};
 use regex::{Regex, Split};
@@ -10,7 +10,11 @@ use crate::zork::character::Character;
 use crate::zork::functional_commands::FunctionalCommands;
 use crate::zork::game_elements::{Command, Direction, Item, Location, NPC};
 
-pub static GAME_ELEMENTS: LazyLock<Mutex<GameElements>> = LazyLock::new(|| Mutex::new(GameElements::new()));
+pub static GAME_ELEMENTS: LazyLock<Mutex<GameElements>> = LazyLock::new(|| {
+    let m = Mutex::new(GameElements::new());
+    println!("Initialized game elements");
+    m
+});
 
 fn main() {
     mod another_crate {
@@ -41,7 +45,7 @@ pub struct FunctionalZork<'a> {
 
 pub type CommandSupplier<'a> = Arc<Mutex<dyn FnMut() -> bool + Sync + Send + 'a>>;
 
-impl <'a> FunctionalZork<'a> {
+impl<'a> FunctionalZork<'a> {
     fn drop_command(zork: Arc<Mutex<FunctionalZork>>) -> CommandSupplier {
         Arc::new(Mutex::new(move || {
             let mut zork = zork.lock().unwrap();
@@ -98,14 +102,17 @@ impl <'a> FunctionalZork<'a> {
     }
 
     pub fn new() -> Arc<Mutex<Self>> {
-        let gm = GAME_ELEMENTS.lock().unwrap();
-        FunctionalZork {
+        let f = FunctionalZork {
             // scanner: Scanner
-            character: Arc::new(Mutex::new(Character::from_location(gm.current_location.clone()))),
+            character: Arc::new(Mutex::new(Character::from_location({
+                let gm = GAME_ELEMENTS.lock().unwrap();
+                gm.current_location.clone()
+            }))),
             fc: FunctionalCommands::new(),
             commands: HashMap::new(),
             command: Command::new(),
-        }.initialize_game()
+        };
+        f.initialize_game()
     }
 
     pub fn initialize_commands(self) -> Arc<Mutex<Self>> {
@@ -138,13 +145,12 @@ impl <'a> FunctionalZork<'a> {
         let mut line = String::new();
         line = br.read_line();
 
-        while "Location".eq_ignore_ascii_case(&line) {
+        while "Location\n".eq_ignore_ascii_case(&line) {
             let mut location = Location::new()
-                .name(br.read_line())
                 .name(br.read_line())
                 .description(br.read_line());
             line = br.read_line();
-            while "Direction".eq_ignore_ascii_case(&line) {
+            while "Direction\n".eq_ignore_ascii_case(&line) {
                 // Add direction
                 location.add_direction(
                     Direction::new()
@@ -153,17 +159,17 @@ impl <'a> FunctionalZork<'a> {
                 );
                 line = br.read_line();
             }
-            while "Item".eq_ignore_ascii_case(&line) {
+            while "Item\n".eq_ignore_ascii_case(&line) {
                 // Add items
                 let item = Item::new()
                     .name(br.read_line())
                     .description(br.read_line());
                 location.add_item(item.get_name());
-                let mut gm = GAME_ELEMENTS.lock().unwrap();
+                let mut gm = GAME_ELEMENTS.lock().expect("Lock game elements");
                 gm.items.insert(item.get_name().to_string(), item);
                 line = br.read_line();
             }
-            while "NPC".eq_ignore_ascii_case(&line) {
+            while "NPC\n".eq_ignore_ascii_case(&line) {
                 // Add NPC
                 let npc = NPC::new()
                     .name(br.read_line())
@@ -176,7 +182,7 @@ impl <'a> FunctionalZork<'a> {
             let mut gm = GAME_ELEMENTS.lock().unwrap();
             gm.locations.insert(location.get_name().to_string(), location);
         }
-        if "StartingLocation".eq_ignore_ascii_case(&line) {
+        if "StartingLocation\n".eq_ignore_ascii_case(&line) {
             let mut gm = GAME_ELEMENTS.lock().unwrap();
             gm.current_location = gm.locations.get(&br.read_line()).unwrap().clone(); // are we really need to clone?
             gm.display_view(&gm.current_location)
@@ -201,7 +207,7 @@ impl <'a> FunctionalZork<'a> {
 
     pub fn parse_command_iter<T>(&mut self, tokens: T)
     where
-        T: Iterator<Item=String>
+        T: Iterator<Item=String>,
     {
         self.command.clear();
         tokens.map(|token| {
@@ -218,22 +224,40 @@ impl <'a> FunctionalZork<'a> {
     }
 
     pub fn execute_command(zork: Arc<Mutex<FunctionalZork>>) -> String {
-        let binding = zork.clone();
+        // let binding = zork.clone();
         // let mut zork = binding.lock().unwrap();
-        let binding = zork.clone();
-        let binding = binding.lock().unwrap();
-        let command = binding.command.get_command();
-        let binding = zork.clone();
-        let binding = binding.lock().unwrap();
-        let commands = binding.commands.get(command);
+        let command = {
+            let binding = zork.clone();
+            let binding = binding.lock().unwrap();
+            let command = binding.command.get_command();
+            command.to_string()
+        };
+        let commands = {
+            let binding = zork.clone();
+            let mut binding = binding.lock().unwrap();
+            let commands = binding.commands.get(&command);
+            if commands.is_some() {
+                Some(commands.unwrap().clone())
+            } else {
+                None
+            }
+        };
         if commands.is_some() {
+            // let binding = zork.clone();
+            // let mut binding = binding.lock().unwrap();
             let c = commands.unwrap().clone();
-            let binding = zork.clone();
-            binding.lock().unwrap().fc.add_command(c);
-            let binding = zork.clone();
-            binding.lock().unwrap().fc.execute_command();
-            let binding = zork.clone();
-            let x = binding.lock().unwrap().command.get_command().to_string(); x
+            // let binding = zork.clone();
+            {
+                zork.lock().unwrap().fc.add_command(c);
+            }
+            // let binding = zork.clone();
+            // zork.lock().unwrap().fc.execute_command();
+            let commands: Vec<CommandSupplier> = {zork.lock().unwrap().fc.get_commands()};
+            commands.iter().for_each(|f| {f.lock().unwrap()();});
+            zork.lock().unwrap().fc.clear_commands();
+            // let binding = zork.clone();
+            let x = zork.lock().unwrap().command.get_command().to_string();
+            x
         } else {
             println!("Unknown command");
             "".to_string()
@@ -252,7 +276,7 @@ pub struct GameElements<'a> {
     pub items: HashMap<String, Item>,
     pub npcs: HashMap<String, NPC>,
     pub commands: HashMap<String, CommandSupplier<'a>>,
-    pub current_location: Location
+    pub current_location: Location,
 }
 
 impl GameElements<'_> {
@@ -262,7 +286,7 @@ impl GameElements<'_> {
             items: HashMap::new(),
             npcs: HashMap::new(),
             commands: HashMap::new(),
-            current_location: Location::new()
+            current_location: Location::new(),
         }
     }
 
@@ -275,18 +299,19 @@ impl GameElements<'_> {
 
 struct BufferedReader {
     buf: String,
-    br: BufReader<File>
+    br: BufReader<File>,
 }
 
 impl BufferedReader {
     fn new(file: File, buf: String) -> Self {
         BufferedReader {
             buf,
-            br: BufReader::new(file)
+            br: BufReader::new(file),
         }
     }
 
     fn read_line(&mut self) -> String {
+        self.buf = "".to_string();
         self.br.read_line(&mut self.buf).unwrap();
         self.buf.clone()
     }
