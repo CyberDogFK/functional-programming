@@ -145,12 +145,12 @@ impl<'a> FunctionalZork<'a> {
         let mut line = String::new();
         line = br.read_line();
 
-        while "Location\n".eq_ignore_ascii_case(&line) {
+        while "Location".eq_ignore_ascii_case(&line) {
             let mut location = Location::new()
                 .name(br.read_line())
                 .description(br.read_line());
             line = br.read_line();
-            while "Direction\n".eq_ignore_ascii_case(&line) {
+            while "Direction".eq_ignore_ascii_case(&line) {
                 // Add direction
                 location.add_direction(
                     Direction::new()
@@ -159,7 +159,7 @@ impl<'a> FunctionalZork<'a> {
                 );
                 line = br.read_line();
             }
-            while "Item\n".eq_ignore_ascii_case(&line) {
+            while "Item".eq_ignore_ascii_case(&line) {
                 // Add items
                 let item = Item::new()
                     .name(br.read_line())
@@ -169,7 +169,7 @@ impl<'a> FunctionalZork<'a> {
                 gm.items.insert(item.get_name().to_string(), item);
                 line = br.read_line();
             }
-            while "NPC\n".eq_ignore_ascii_case(&line) {
+            while "NPC".eq_ignore_ascii_case(&line) {
                 // Add NPC
                 let npc = NPC::new()
                     .name(br.read_line())
@@ -182,7 +182,7 @@ impl<'a> FunctionalZork<'a> {
             let mut gm = GAME_ELEMENTS.lock().unwrap();
             gm.locations.insert(location.get_name().to_string(), location);
         }
-        if "StartingLocation\n".eq_ignore_ascii_case(&line) {
+        if "StartingLocation".eq_ignore_ascii_case(&line) {
             let mut gm = GAME_ELEMENTS.lock().unwrap();
             gm.current_location = gm.locations.get(&br.read_line()).unwrap().clone(); // are we really need to clone?
             gm.display_view(&gm.current_location)
@@ -199,10 +199,12 @@ impl<'a> FunctionalZork<'a> {
         let to_remove = ["an", "an", "the", "and"];
         let re = Regex::new("\\s+")
             .unwrap();
-        re.split(&input)
+        let s = re.split(&input)
             .filter(|s| !to_remove.contains(s))
+            .filter(|s| *s != "")
             .map(|s| s.to_string())
-            .collect()
+            .collect();
+        s
     }
 
     pub fn parse_command_iter<T>(&mut self, tokens: T)
@@ -313,6 +315,10 @@ impl BufferedReader {
     fn read_line(&mut self) -> String {
         self.buf = "".to_string();
         self.br.read_line(&mut self.buf).unwrap();
+        let s = self.buf.strip_suffix("\n");
+        if s.is_some() {
+            self.buf = s.unwrap().to_string();
+        }
         self.buf.clone()
     }
 

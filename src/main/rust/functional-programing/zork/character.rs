@@ -70,11 +70,12 @@ impl Character {
         } else {
             directions.iter().for_each(|direction| {
                 let mut gm = GAME_ELEMENTS.lock().unwrap();
-                let location_name = gm.current_location.get_location(direction);
+                let location_name = gm.current_location.get_location(direction)
+                    .map(|s| s.to_string());
                 println!("{}", location_name
                     .map(|name| {
-                        let mut gm = GAME_ELEMENTS.lock().unwrap();
-                        let new_location = gm.locations.get(name).unwrap();
+                        // let mut gm = GAME_ELEMENTS.lock().unwrap();
+                        let new_location = gm.locations.get(&name).unwrap();
                         self.location = new_location.clone();
                         gm.current_location = new_location.clone();
                         gm.display_view(
