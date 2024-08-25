@@ -60,13 +60,16 @@ impl Location {
         &self.description
     }
 
-    pub fn get_items(&self) -> Vec<&String> {
-        self.items.iter()
-            .map(|s| s).collect()
+    pub fn get_items(&self) -> &Vec<String> {
+        &self.items
     }
 
     pub fn get_items_mut(&mut self) -> &mut Vec<String> {
         &mut self.items
+    }
+    
+    pub fn set_items(&mut self, items: Vec<String>) {
+        self.items = items;
     }
 
     pub fn add_item(&mut self, item: &str) {

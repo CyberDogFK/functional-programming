@@ -185,7 +185,8 @@ impl<'a> FunctionalZork<'a> {
         if "StartingLocation".eq_ignore_ascii_case(&line) {
             let mut gm = GAME_ELEMENTS.lock().unwrap();
             gm.current_location = gm.locations.get(&br.read_line()).unwrap().clone(); // are we really need to clone?
-            gm.display_view(&gm.current_location)
+            gm.display_view(&gm.current_location);
+            self.character.lock().unwrap().set_location(gm.current_location.clone())
         } else {
             println!("Missing Starting Location!");
         }

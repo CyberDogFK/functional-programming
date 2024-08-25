@@ -13,26 +13,31 @@ impl Character {
             location,
         }
     }
+    
+    pub fn set_location(&mut self, location: Location) {
+        self.location = location;
+    }
 
     // todo: change bool to Result
     pub fn pickup(&mut self, command: &Command) -> bool {
         let arguments = command.get_arguments();
-        let mut items = self.location.get_items();
+        let mut items = self.location.get_items_mut();
         arguments.iter()
             .filter(|item_name| {
-                if items
-                    .contains(item_name) {
+                if items.contains(item_name) {
                     true
                 } else {
                     println!("Cannot pickup {}", item_name);
                     false
                 }
-            })
+            }).collect::<Vec<&String>>().into_iter()
             .for_each(|item_name| {
+                let mut items = self.location.get_items_mut();
                 &self.items.push(item_name.into());
-                let mut location_items = items.clone();
-                let position = location_items.iter().position(|i| *i == item_name).unwrap();
-                location_items.swap_remove(position);
+                // let mut location_items: &mut Vec<String> = items;
+                let position = items.iter().position(|i| i == item_name).unwrap();
+                items.swap_remove(position);
+                GAME_ELEMENTS.lock().unwrap().current_location.set_items(items.clone());
                 println!("Picking up {}", item_name);
             });
         true
