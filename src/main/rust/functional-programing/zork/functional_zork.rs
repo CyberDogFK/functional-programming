@@ -1,16 +1,16 @@
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::{BufRead, BufReader};
 use std::rc::Rc;
-use std::sync::{LazyLock};
-use regex::Regex;
+use std::sync::{Arc, LazyLock, Mutex};
+use regex::{Regex, Split};
 use crate::zork::character::Character;
 use crate::zork::functional_commands::FunctionalCommands;
 use crate::zork::game_elements::{Command, Direction, Item, Location, NPC};
 
-static GAME_ELEMENTS: LazyLock<GameElements<'static>> = LazyLock::new(|| GameElements::new());
+pub static GAME_ELEMENTS: LazyLock<Mutex<GameElements>> = LazyLock::new(|| Mutex::new(GameElements::new()));
 
 fn main() {
     mod another_crate {
@@ -33,79 +33,99 @@ fn main() {
 
 pub struct FunctionalZork<'a> {
     // scanner: Scanner
-    character: Character,
+    character: Arc<Mutex<Character>>,
     fc: FunctionalCommands<'a>,
     commands: HashMap<String, CommandSupplier<'a>>,
     command: Command,
 }
 
-pub type CommandSupplier<'a> = Rc<RefCell<dyn FnMut() -> bool + 'a>>;
+pub type CommandSupplier<'a> = Arc<Mutex<dyn FnMut() -> bool + Sync + Send + 'a>>;
 
 impl FunctionalZork<'_> {
-    fn drop_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| self.character.drop(&self.command)))
+    fn drop_command(zork: Arc<Mutex<FunctionalZork>>) -> CommandSupplier {
+        Arc::new(Mutex::new(move || {
+            let mut zork = zork.lock().unwrap();
+            let mut char = zork.character.lock().unwrap();
+            char.drop_command(&zork.command)
+        }))
     }
 
-    fn pickup_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| self.character.pickup(&self.command)))
+    fn pickup_command(zork: Arc<Mutex<FunctionalZork>>) -> CommandSupplier {
+        Arc::new(Mutex::new(move || {
+            let mut zork = zork.lock().unwrap();
+            let mut char = zork.character.lock().unwrap();
+            char.pickup(&zork.command)
+        }))
     }
 
-    fn walk_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| self.character.walk(&self.command)))
+    fn walk_command(zork: Arc<Mutex<FunctionalZork>>) -> CommandSupplier {
+        Arc::new(Mutex::new(move || {
+            let mut zork = zork.lock().unwrap();
+            let mut char = zork.character.lock().unwrap();
+            char.walk(&zork.command)
+        }))
     }
 
-    fn inventory_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| self.character.inventory(&self.command)))
+    fn inventory_command(zork: Arc<Mutex<FunctionalZork>>) -> CommandSupplier {
+        Arc::new(Mutex::new(move || {
+            let mut zork = zork.lock().unwrap();
+            let mut char = zork.character.lock().unwrap();
+            char.inventory(&zork.command)
+        }))
     }
 
-    fn look_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| {
-            GAME_ELEMENTS.display_view(&GAME_ELEMENTS.current_location);
+    fn look_command() -> CommandSupplier<'static> {
+        Arc::new(Mutex::new(|| {
+            let gm = GAME_ELEMENTS.lock().unwrap();
+            gm.display_view(&gm.current_location);
             true
         }))
     }
 
-    fn directions_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| {
-            GAME_ELEMENTS.current_location.display_paths();
+    fn directions_command() -> CommandSupplier<'static> {
+        Arc::new(Mutex::new(|| {
+            let gm = GAME_ELEMENTS.lock().unwrap();
+            gm.current_location.display_paths();
             true
         }))
     }
 
-    fn quit_command(&mut self) -> CommandSupplier {
-        Rc::new(RefCell::new(|| {
+    fn quit_command() -> CommandSupplier<'static> {
+        Arc::new(Mutex::new(|| {
             println!("Thank you for playing!");
             true
         }))
     }
 
-    pub fn new() -> Rc<RefCell<Self>> {
+    pub fn new() -> Arc<Mutex<Self>> {
+        let gm = GAME_ELEMENTS.lock().unwrap();
         FunctionalZork {
             // scanner: Scanner
-            character: Character::from_location(GAME_ELEMENTS.current_location.clone()),
+            character: Arc::new(Mutex::new(Character::from_location(gm.current_location.clone()))),
             fc: FunctionalCommands::new(),
             commands: HashMap::new(),
             command: Command::new(),
         }.initialize_commands()
     }
 
-    pub fn initialize_commands(self) -> Rc<RefCell<Self>> {
+    pub fn initialize_commands(self) -> Arc<Mutex<Self>> {
         // let mut commands = &mut self.commands;
-        let s = Rc::new(RefCell::new(self));
-        let mut ss = s.borrow_mut();
+        let s = Arc::new(Mutex::new(self));
+        let binding = s.clone();
+        let mut ss = binding.lock().unwrap();
         // ss.commands.insert("drop".to_string(), s.borrow().drop_command().clone());
-        ss.commands.insert("drop".to_string(), ss.drop_command());
-        ss.commands.insert("Drop".to_string(), ss.drop_command());
-        ss.commands.insert("pickup".to_string(), ss.pickup_command());
-        ss.commands.insert("Pickup".to_string(), ss.pickup_command());
-        ss.commands.insert("walk".to_string(), ss.walk_command());
-        ss.commands.insert("go".to_string(), ss.walk_command());
-        ss.commands.insert("inventory".to_string(), ss.inventory_command());
-        ss.commands.insert("inv".to_string(), ss.inventory_command());
-        ss.commands.insert("look".to_string(), ss.look_command());
-        ss.commands.insert("directions".to_string(), ss.directions_command());
-        ss.commands.insert("dir".to_string(), ss.directions_command());
-        ss.commands.insert("quit".to_string(), ss.quit_command());
+        ss.commands.insert("drop".to_string(), FunctionalZork::drop_command(s.clone()));
+        ss.commands.insert("Drop".to_string(), FunctionalZork::drop_command(s.clone()));
+        ss.commands.insert("pickup".to_string(), FunctionalZork::pickup_command(s.clone()));
+        ss.commands.insert("Pickup".to_string(), FunctionalZork::pickup_command(s.clone()));
+        ss.commands.insert("walk".to_string(), FunctionalZork::walk_command(s.clone()));
+        ss.commands.insert("go".to_string(), FunctionalZork::walk_command(s.clone()));
+        ss.commands.insert("inventory".to_string(), FunctionalZork::inventory_command(s.clone()));
+        ss.commands.insert("inv".to_string(), FunctionalZork::inventory_command(s.clone()));
+        ss.commands.insert("look".to_string(), FunctionalZork::look_command());
+        ss.commands.insert("directions".to_string(), FunctionalZork::directions_command());
+        ss.commands.insert("dir".to_string(), FunctionalZork::directions_command());
+        ss.commands.insert("quit".to_string(), FunctionalZork::quit_command());
         s
     }
 
@@ -139,7 +159,8 @@ impl FunctionalZork<'_> {
                     .name(br.read_line())
                     .description(br.read_line());
                 location.add_item(item.get_name());
-                GAME_ELEMENTS.items.insert(item.get_name().to_string(), item);
+                let mut gm = GAME_ELEMENTS.lock().unwrap();
+                gm.items.insert(item.get_name().to_string(), item);
                 line = br.read_line();
             }
             while "NPC".eq_ignore_ascii_case(&line) {
@@ -148,29 +169,34 @@ impl FunctionalZork<'_> {
                     .name(br.read_line())
                     .description(br.read_line());
                 location.add_npc(npc.get_name());
-                GAME_ELEMENTS.npcs.insert(npc.get_name().to_string(), npc);
+                let mut gm = GAME_ELEMENTS.lock().unwrap();
+                gm.npcs.insert(npc.get_name().to_string(), npc);
                 line = br.read_line();
             }
-            GAME_ELEMENTS.locations.insert(location.get_name().to_string(), location);
+            let mut gm = GAME_ELEMENTS.lock().unwrap();
+            gm.locations.insert(location.get_name().to_string(), location);
         }
         if "StartingLocation".eq_ignore_ascii_case(&line) {
-            GAME_ELEMENTS.current_location = GAME_ELEMENTS.locations.get(&br.read_line()).unwrap().clone(); // are we really need to clone?
-            GAME_ELEMENTS.display_view(&GAME_ELEMENTS.current_location)
+            let mut gm = GAME_ELEMENTS.lock().unwrap();
+            gm.current_location = gm.locations.get(&br.read_line()).unwrap().clone(); // are we really need to clone?
+            gm.display_view(&gm.current_location)
         } else {
             println!("Missing Starting Location!");
         }
         self.initialize_commands();
     }
 
-    pub fn get_command_iter(&self) -> impl Iterator<Item = String> {
+    pub fn get_command_iter(&self) -> Vec<String> {
         let mut input = String::new();
         io::stdin().read_line(&mut input).unwrap();
 
         let to_remove = ["an", "an", "the", "and"];
-        let reg = Regex::new("\\s+")
-            .unwrap().split(&input)
-            .filter(|s| !to_remove.contains(s));
-        reg
+        let re = Regex::new("\\s+")
+            .unwrap();
+        re.split(&input)
+            .filter(|s| !to_remove.contains(s))
+            .map(|s| s.to_string())
+            .collect()
     }
 
     pub fn parse_command_iter<T>(&mut self, tokens: T)
@@ -190,24 +216,26 @@ impl FunctionalZork<'_> {
                 !"quit".eq_ignore_ascii_case(&token)
             });
     }
-    
-    pub fn execute_command(&mut self) -> &str {
-        match self.commands.get(self.command.get_command()) {
+
+    pub fn execute_command(zork: Arc<Mutex<Self>>) -> String {
+        let mut binding = zork.clone();
+        let mut zork = binding.lock().unwrap();
+        let command = zork.command.get_command();
+        let x = match binding.lock().unwrap().commands.get(command).clone() {
             Some(next_command) => {
-                self.fc.add_command(next_command.clone());
-                self.fc.execute_command();
-                self.command.get_command()
+                zork.fc.add_command(next_command.clone());
+                zork.fc.execute_command();
+                zork.command.get_command().to_string()
             }
             None => {
                 println!("Unknown command");
-                ""
+                "".to_string()
             }
-        }
-        
-        
+        }; x
+
+
     }
 }
-
 
 pub struct GameElements<'a> {
     pub locations: HashMap<String, Location>,
@@ -218,7 +246,7 @@ pub struct GameElements<'a> {
 }
 
 impl GameElements<'_> {
-    fn new() -> Self {
+    pub fn new() -> Self {
         GameElements {
             locations: HashMap::new(),
             items: HashMap::new(),
@@ -228,7 +256,7 @@ impl GameElements<'_> {
         }
     }
 
-    fn display_view(&self, location: &Location) {
+    pub fn display_view(&self, location: &Location) {
         println!("{}", location.get_description());
         self.current_location.display_items();
         self.current_location.display_npcs();

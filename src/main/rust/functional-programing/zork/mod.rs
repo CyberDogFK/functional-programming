@@ -4,3 +4,4 @@ mod functional_commands;
 mod character;
 
 pub use functional_zork::FunctionalZork;
+

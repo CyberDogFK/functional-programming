@@ -1,10 +1,11 @@
 use crate::zork::functional_zork::CommandSupplier;
+use crate::zork::game_elements::Command;
 
 pub struct FunctionalCommands<'a> {
     commands: Vec<CommandSupplier<'a>>
 }
 
-impl FunctionalCommands<'_> {
+impl <'a> FunctionalCommands<'a> {
     pub fn new() -> Self {
         Self {
             commands: vec![],
@@ -16,7 +17,10 @@ impl FunctionalCommands<'_> {
     }
 
     pub fn execute_command(&mut self) {
-        self.commands.iter().for_each(|it| { it(); });
+        self.commands.iter().for_each(|it| {
+            let mut a = it.lock().unwrap();
+            a(); 
+        });
         self.commands.clear();
     }
 }

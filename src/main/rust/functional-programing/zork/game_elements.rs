@@ -60,8 +60,9 @@ impl Location {
         &self.description
     }
 
-    pub fn get_items(&self) -> &[String] {
-        &self.items
+    pub fn get_items(&self) -> Vec<&String> {
+        self.items.iter()
+            .map(|s| s).collect()
     }
 
     pub fn get_items_mut(&mut self) -> &mut Vec<String> {
@@ -134,7 +135,7 @@ impl Command {
     }
 
     pub fn arguments(mut self, arguments: &[String]) -> Self {
-        self.arguments = arguments.into_vec();
+        self.arguments = arguments.to_vec();
         self
     }
 

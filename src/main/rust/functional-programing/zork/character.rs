@@ -1,4 +1,5 @@
-use crate::zork::game_elements::{Command, GameElements, Location};
+use crate::zork::functional_zork::GAME_ELEMENTS;
+use crate::zork::game_elements::{Command, Location};
 
 pub struct Character {
     items: Vec<String>,
@@ -16,9 +17,10 @@ impl Character {
     // todo: change bool to Result
     pub fn pickup(&mut self, command: &Command) -> bool {
         let arguments = command.get_arguments();
+        let mut items = self.location.get_items();
         arguments.iter()
             .filter(|item_name| {
-                if self.location.get_items()
+                if items
                     .contains(item_name) {
                     true
                 } else {
@@ -27,16 +29,16 @@ impl Character {
                 }
             })
             .for_each(|item_name| {
-                self.items.push(item_name.into());
-                let location_items = self.location.get_items_mut();
-                let position = location_items.iter().position(|i| i.eq(item_name)).unwrap();
+                &self.items.push(item_name.into());
+                let mut location_items = items.clone();
+                let position = location_items.iter().position(|i| *i == item_name).unwrap();
                 location_items.swap_remove(position);
                 println!("Picking up {}", item_name);
             });
         true
     }
 
-    pub fn drop(&mut self, command: &Command) -> bool {
+    pub fn drop_command(&mut self, command: &Command) -> bool {
         let arguments = command.get_arguments();
         if arguments.is_empty() {
             println!("Drop what?");
@@ -67,19 +69,20 @@ impl Character {
             false
         } else {
             directions.iter().for_each(|direction| {
-                let location_name: Option<String> =
-                    GAME_ELEMENTS::current_location.get_location(direction);
+                let mut gm = GAME_ELEMENTS.lock().unwrap();
+                let location_name = gm.current_location.get_location(direction);
                 println!("{}", location_name
                     .map(|name| {
-                        let new_location: Location = GameElements::locations.get(name);
-                        self.location = new_location;
-                        GameElements::current_location = new_location;
-                        GameElements::display_view(
-                            GameElements::current_location,
+                        let mut gm = GAME_ELEMENTS.lock().unwrap();
+                        let new_location = gm.locations.get(name).unwrap();
+                        self.location = new_location.clone();
+                        gm.current_location = new_location.clone();
+                        gm.display_view(
+                            &gm.current_location,
                         );
                         return "";
                     })
-                    .or_else("However, you can't go " + direction + "\n")
+                    .or(Some(format!("However, you can't go {}\n", direction).as_str())).unwrap()
                 );
             });
             true
