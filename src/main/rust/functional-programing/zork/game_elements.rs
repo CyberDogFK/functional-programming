@@ -37,8 +37,8 @@ impl Location {
         }
     }
 
-    pub fn name(mut self, name: &str) -> Self {
-        self.name = name.into();
+    pub fn name(mut self, name: String) -> Self {
+        self.name = name;
         self
     }
 
@@ -51,8 +51,8 @@ impl Location {
             .map(|d| d.location.as_str())
     }
 
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = description.into();
+    pub fn description(mut self, description: String) -> Self {
+        self.description = description;
         self
     }
 
@@ -142,9 +142,8 @@ impl Command {
         &self.arguments
     }
 
-    pub fn add_argument(mut self, argument: String) -> Self {
+    pub fn add_argument(&mut self, argument: String) {
         self.arguments.push(argument);
-        self
     }
 
     pub fn command(mut self, command: String) -> Self {
@@ -156,14 +155,13 @@ impl Command {
         &self.command
     }
 
-    pub fn set_command(mut self, command: String) {
+    pub fn set_command(&mut self, command: String) {
         self.command = command;
     }
 
-    pub fn clear(mut self) -> Self {
+    pub fn clear(&mut self) {
         self.arguments.clear();
         self.command = "".into();
-        self
     }
 }
 
@@ -188,8 +186,8 @@ impl Direction {
         }
     }
 
-    pub fn direction(mut self, direction: &str) -> Self {
-        self.direction = direction.into();
+    pub fn direction(mut self, direction: String) -> Self {
+        self.direction = direction;
         self
     }
 
@@ -197,8 +195,8 @@ impl Direction {
         &self.direction
     }
 
-    pub fn location(mut self, location: &str) -> Self {
-        self.location = location.into();
+    pub fn location(mut self, location: String) -> Self {
+        self.location = location;
         self
     }
 
@@ -219,8 +217,15 @@ pub struct Item {
 }
 
 impl Item {
-    pub fn name(mut self, name: &str) -> Self {
-        self.name = name.into();
+    pub fn new() -> Self {
+        Self {
+            name: "".to_string(),
+            description: "".to_string(),
+        }
+    }
+    
+    pub fn name(mut self, name: String) -> Self {
+        self.name = name;
         self
     }
 
@@ -228,8 +233,8 @@ impl Item {
         &self.name
     }
 
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = description.into();
+    pub fn description(mut self, description: String) -> Self {
+        self.description = description;
         self
     }
 
@@ -250,8 +255,15 @@ pub struct NPC {
 }
 
 impl NPC {
-    pub fn name(mut self, name: &str) -> Self {
-        self.name = name.into();
+    pub fn new() -> Self {
+        Self {
+            name: "".to_string(),
+            description: "".to_string(),
+        }
+    }
+    
+    pub fn name(mut self, name: String) -> Self {
+        self.name = name;
         self
     }
 
@@ -259,8 +271,8 @@ impl NPC {
         &self.name
     }
 
-    pub fn description(mut self, description: &str) -> Self {
-        self.description = description.into();
+    pub fn description(mut self, description: String) -> Self {
+        self.description = description;
         self
     }
 

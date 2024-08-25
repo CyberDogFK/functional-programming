@@ -29,7 +29,7 @@ impl Character {
             .for_each(|item_name| {
                 self.items.push(item_name.into());
                 let location_items = self.location.get_items_mut();
-                let position = location_items.iter().position(|i| *i.eq(item_name)).unwrap();
+                let position = location_items.iter().position(|i| i.eq(item_name)).unwrap();
                 location_items.swap_remove(position);
                 println!("Picking up {}", item_name);
             });
@@ -44,7 +44,7 @@ impl Character {
         } else {
             let mut dropped_item = false;
             for item_name in arguments {
-                dropped_item = self.items.iter().position(|i| *i.eq(item_name))
+                dropped_item = self.items.iter().position(|i| i.eq(item_name))
                     .map(|p| {
                         self.items.swap_remove(p)
                     })
@@ -68,7 +68,7 @@ impl Character {
         } else {
             directions.iter().for_each(|direction| {
                 let location_name: Option<String> =
-                    GameElements::current_location.get_location(direction);
+                    GAME_ELEMENTS::current_location.get_location(direction);
                 println!("{}", location_name
                     .map(|name| {
                         let new_location: Location = GameElements::locations.get(name);
